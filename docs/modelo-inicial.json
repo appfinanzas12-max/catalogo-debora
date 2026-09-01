@@ -1,0 +1,93 @@
+{
+  "settings": {
+    "brand": "DEBORA",
+    "whatsapp": "+57 322 4079955",
+    "commissionPercent": 10
+  },
+  "categories": [
+    "Vibradores con App",
+    "Lencería Sexual",
+    "Consoladores",
+    "Aceites, Lubricantes y Esencias",
+    "Juegos Eróticos"
+  ],
+  "products": [
+    {
+      "code": "DE-L001",
+      "name": "Body Abierto",
+      "category": "Lencería Sexual",
+      "price": 55900,
+      "stock": 10,
+      "status": "Disponible"
+    },
+    {
+      "code": "DE-L002",
+      "name": "Lenceria Policial",
+      "category": "Lencería Sexual",
+      "price": 125850,
+      "stock": 8,
+      "status": "Disponible"
+    },
+    {
+      "code": "DE-L003",
+      "name": "Babydoll sexual para mujer",
+      "category": "Lencería Sexual",
+      "price": 37000,
+      "stock": 12,
+      "status": "Disponible"
+    },
+    {
+      "code": "DE-L004",
+      "name": "Ropa Intima De Prestigio Elegante",
+      "category": "Lencería Sexual",
+      "price": 51500,
+      "stock": 7,
+      "status": "Disponible"
+    },
+    {
+      "code": "DE-L005",
+      "name": "Arnes de Fetiche En Cuero",
+      "category": "Lencería Sexual",
+      "price": 33400,
+      "stock": 6,
+      "status": "Disponible"
+    },
+    {
+      "code": "DE-L006",
+      "name": "Malla Transparente Para Mujer",
+      "category": "Lencería Sexual",
+      "price": 29900,
+      "stock": 9,
+      "status": "Disponible"
+    },
+    {
+      "code": "DE-L007",
+      "name": "Disfraz De Mucama Para Fantasia",
+      "category": "Lencería Sexual",
+      "price": 58900,
+      "stock": 5,
+      "status": "Disponible"
+    },
+    {
+      "code": "DE-L008",
+      "name": "Conjunto de Lencería Sexi Babydoll",
+      "category": "Lencería Sexual",
+      "price": 37900,
+      "stock": 11,
+      "status": "Disponible"
+    }
+  ],
+  "users": [
+    {
+      "id": "admin-demo",
+      "name": "Administrador",
+      "role": "ADMIN"
+    },
+    {
+      "id": "seller-demo",
+      "name": "Vendedor Demo",
+      "role": "VENDEDOR"
+    }
+  ],
+  "sales": []
+}
