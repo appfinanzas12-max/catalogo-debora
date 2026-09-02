@@ -1,28 +1,35 @@
 // ============================================
-// CONFIGURACIÓN FIREBASE - AUTENTICACIÓN
+// CONFIGURACIÓN FIREBASE - SEGURA
 // ============================================
 
-// 🔴 IMPORTANTE: REEMPLAZA ESTOS VALORES CON TUS CREDENCIALES DE FIREBASE CONSOLE
-// Ve a: https://console.firebase.google.com/ 
-// Proyecto → Configuración → Mi aplicación → Web
-// COPIA los valores de firebaseConfig
+// 🔒 CREDENCIALES DESDE VARIABLES DE ENTORNO
+// (Nunca hardcodeadas en el frontend)
 
 const firebaseConfig = {
-  apiKey: "AIzaSyB7kXhJ5zy5FMhmksPzdSleO1A7aWMbtu0",
-  authDomain: "deboracatalogo.firebaseapp.com",
-  projectId: "deboracatalogo",
-  storageBucket: "deboracatalogo.firebasestorage.app",
-  messagingSenderId: "552563622109",
-  appId: "1:552563622109:web:ce43fbb7ca5f581c8cdb34"
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "CREDENTIAL_MISSING",
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "CREDENTIAL_MISSING",
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "CREDENTIAL_MISSING",
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "CREDENTIAL_MISSING",
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "CREDENTIAL_MISSING",
+  appId: import.meta.env.VITE_FIREBASE_APP_ID || "CREDENTIAL_MISSING"
 };
 
-// Inicializar Firebase
-firebase.initializeApp(firebaseConfig);
-const auth = firebase.auth();
+// Validar que las credenciales estén configuradas
+if (firebaseConfig.apiKey === "CREDENTIAL_MISSING") {
+  console.error("❌ FIREBASE NOT CONFIGURED");
+  console.error("Add environment variables to Netlify:");
+  console.error("VITE_FIREBASE_API_KEY, VITE_FIREBASE_AUTH_DOMAIN, etc.");
+}
 
-// ============================================
-// CONFIGURACIÓN DE SESIÓN - 48 HORAS
-// ============================================
+// Inicializar Firebase
+try {
+  firebase.initializeApp(firebaseConfig);
+  console.log("✅ Firebase initialized securely");
+} catch (error) {
+  console.error("❌ Firebase initialization failed:", error);
+}
+
+const auth = firebase.auth();
 
 const SESSION_DURATION_MS = 48 * 60 * 60 * 1000; // 48 horas en milisegundos
 const SESSION_TIMESTAMP_KEY = 'debora_session_timestamp';
