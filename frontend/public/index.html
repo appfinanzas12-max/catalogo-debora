@@ -300,6 +300,56 @@ function showAddProductForm(content) {
         <input type="text" id="productMaterial" placeholder="Silicona médica, Encaje, etc." style="width:100%;padding:0.75rem;border:1px solid #6f2c7b;background:#0e0612;color:#eee7f0;border-radius:8px;">
       </div>
       
+      <div>
+        <label style="display:block;margin-bottom:0.5rem;color:#eee7f0;font-weight:bold;">📸 Imagen del Producto</label>
+        <div style="border:1px solid #6f2c7b;border-radius:8px;padding:1rem;background:#0e0612;">
+          <!-- Pestañas de imagen -->
+          <div style="display:flex;gap:0.5rem;margin-bottom:1rem;">
+            <button type="button" onclick="showImageTab('upload')" id="imgTabUpload" class="img-tab active" style="background:#f51b91;color:white;border:none;padding:0.5rem 1rem;border-radius:6px;cursor:pointer;font-size:0.8rem;">📂 Subir Archivo</button>
+            <button type="button" onclick="showImageTab('url')" id="imgTabUrl" class="img-tab" style="background:#21102b;color:#eee7f0;border:none;padding:0.5rem 1rem;border-radius:6px;cursor:pointer;font-size:0.8rem;">🌐 URL</button>
+            <button type="button" onclick="showImageTab('cloudinary')" id="imgTabCloudinary" class="img-tab" style="background:#21102b;color:#eee7f0;border:none;padding:0.5rem 1rem;border-radius:6px;cursor:pointer;font-size:0.8rem;">☁️ Cloudinary</button>
+            <button type="button" onclick="showImageTab('camera')" id="imgTabCamera" class="img-tab" style="background:#21102b;color:#eee7f0;border:none;padding:0.5rem 1rem;border-radius:6px;cursor:pointer;font-size:0.8rem;">📱 Cámara</button>
+          </div>
+          
+          <!-- Contenido de imagen -->
+          <div id="imageUploadContent">
+            <!-- Subida directa -->
+            <div id="uploadTab" class="image-tab-content">
+              <input type="file" id="productImage" accept="image/*" style="width:100%;padding:0.75rem;border:1px solid #6f2c7b;background:#140719;color:#eee7f0;border-radius:8px;margin-bottom:0.5rem;">
+              <div style="color:#b8acba;font-size:0.8rem;">✅ Formatos: JPG, PNG, GIF (máx. 5MB)</div>
+            </div>
+            
+            <!-- URL -->
+            <div id="urlTab" class="image-tab-content" style="display:none;">
+              <input type="url" id="productImageUrl" placeholder="https://ejemplo.com/imagen.jpg" style="width:100%;padding:0.75rem;border:1px solid #6f2c7b;background:#140719;color:#eee7f0;border-radius:8px;margin-bottom:0.5rem;">
+              <div style="color:#b8acba;font-size:0.8rem;">🌐 Pega el enlace de una imagen de internet</div>
+            </div>
+            
+            <!-- Cloudinary -->
+            <div id="cloudinaryTab" class="image-tab-content" style="display:none;">
+              <button type="button" onclick="openCloudinaryUpload()" style="width:100%;padding:1rem;border:1px solid #16c784;background:#140719;color:#16c784;border-radius:8px;cursor:pointer;margin-bottom:0.5rem;">
+                ☁️ Subir a Cloudinary (Recomendado)
+              </button>
+              <div style="color:#b8acba;font-size:0.8rem;">✨ Servicio profesional - Optimización automática, CDN global, sin límites</div>
+            </div>
+            
+            <!-- Cámara -->
+            <div id="cameraTab" class="image-tab-content" style="display:none;">
+              <button type="button" onclick="openCamera()" style="width:100%;padding:1rem;border:1px solid #ff6b6b;background:#140719;color:#ff6b6b;border-radius:8px;cursor:pointer;margin-bottom:0.5rem;">
+                📱 Tomar Foto Ahora
+              </button>
+              <div style="color:#b8acba;font-size:0.8rem;">📸 Activa la cámara para tomar foto del producto</div>
+            </div>
+          </div>
+          
+          <!-- Preview de imagen -->
+          <div id="imagePreview" style="margin-top:1rem;text-align:center;display:none;">
+            <div style="color:#f51b91;font-size:0.9rem;margin-bottom:0.5rem;">Vista Previa:</div>
+            <img id="previewImg" style="max-width:200px;max-height:150px;border-radius:8px;border:1px solid #6f2c7b;">
+          </div>
+        </div>
+      </div>
+      
       <div style="background:#21102b;padding:1rem;border-radius:8px;border:1px solid #6f2c7b;">
         <h4 style="color:#f51b91;margin:0 0 0.5rem 0;">📱 Integración Automática</h4>
         <p style="color:#b8acba;margin:0;font-size:0.9rem;">✅ Se generará automáticamente: código único, botón WhatsApp y se agregará al catálogo</p>
@@ -341,6 +391,13 @@ function handleAddProduct(e) {
   if (colors) details.push(['Colores', colors]);
   details.push(['Disponibilidad', getAvailabilityText(availability)]);
   
+  // Usar imagen seleccionada o generar placeholder
+  let productImage = selectedImageData;
+  if (!productImage) {
+    // Generar imagen placeholder con mejor diseño
+    productImage = `data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300" viewBox="0 0 400 300"><defs><linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:%23f51b91;stop-opacity:1" /><stop offset="100%" style="stop-color:%2321102b;stop-opacity:1" /></linearGradient></defs><rect width="400" height="300" fill="url(%23grad)"/><circle cx="200" cy="120" r="40" fill="white" opacity="0.3"/><text x="200" y="180" text-anchor="middle" fill="white" font-size="16" font-family="Arial">${name}</text><text x="200" y="200" text-anchor="middle" fill="white" font-size="12" opacity="0.8">${code}</text><text x="200" y="220" text-anchor="middle" fill="white" font-size="10" opacity="0.6">DEBORA</text></svg>`;
+  }
+  
   // Crear nuevo producto
   const newProduct = {
     code: code,
@@ -350,17 +407,19 @@ function handleAddProduct(e) {
     price: price,
     desc: desc,
     details: details,
-    image: `data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="250" viewBox="0 0 300 250"><rect width="300" height="250" fill="%23f51b91"/><text x="150" y="130" text-anchor="middle" fill="white" font-size="16">${name}</text></svg>`
+    image: productImage
   };
   
   // Agregar a la lista
   adminProducts.push(newProduct);
   products.push(newProduct); // También actualizar productos originales
   
-  alert('¡Producto agregado exitosamente! 🎉');
+  alert('¡Producto agregado exitosamente! 🎉\n\n📱 El botón WhatsApp se generó automáticamente\n📋 Código asignado: ' + code);
   
   // Limpiar formulario
   document.getElementById('addProductForm').reset();
+  selectedImageData = null;
+  document.getElementById('imagePreview').style.display = 'none';
   
   // Refrescar catálogo si está visible
   if (document.getElementById('tabCatalog').style.background === 'rgb(245, 27, 145)') {
@@ -543,6 +602,178 @@ function showCategoriesManager(content) {
       </div>
     </div>
   `;
+}
+
+// ===== SISTEMA DE IMÁGENES =====
+
+// Variable global para almacenar imagen seleccionada
+let selectedImageData = null;
+
+function showImageTab(tab) {
+  // Actualizar pestañas de imagen
+  document.querySelectorAll('.img-tab').forEach(t => {
+    t.style.background = '#21102b';
+    t.style.color = '#eee7f0';
+  });
+  document.getElementById('imgTab' + tab.charAt(0).toUpperCase() + tab.slice(1)).style.background = '#f51b91';
+  document.getElementById('imgTab' + tab.charAt(0).toUpperCase() + tab.slice(1)).style.color = 'white';
+  
+  // Mostrar contenido correspondiente
+  document.querySelectorAll('.image-tab-content').forEach(content => {
+    content.style.display = 'none';
+  });
+  document.getElementById(tab + 'Tab').style.display = 'block';
+}
+
+// Manejo de archivo subido
+document.addEventListener('DOMContentLoaded', function() {
+  // Listener para archivo de imagen
+  setTimeout(() => {
+    const fileInput = document.getElementById('productImage');
+    if (fileInput) {
+      fileInput.addEventListener('change', handleFileSelect);
+    }
+    
+    // Listener para URL de imagen
+    const urlInput = document.getElementById('productImageUrl');
+    if (urlInput) {
+      urlInput.addEventListener('input', handleImageUrl);
+    }
+  }, 1000);
+});
+
+function handleFileSelect(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  
+  // Validar tipo de archivo
+  if (!file.type.match(/^image\/(jpeg|jpg|png|gif)$/)) {
+    alert('Por favor selecciona una imagen válida (JPG, PNG, GIF)');
+    return;
+  }
+  
+  // Validar tamaño (5MB máx)
+  if (file.size > 5 * 1024 * 1024) {
+    alert('La imagen es muy grande. Máximo 5MB permitido.');
+    return;
+  }
+  
+  // Convertir a base64
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    selectedImageData = e.target.result;
+    showImagePreview(selectedImageData);
+  };
+  reader.readAsDataURL(file);
+}
+
+function handleImageUrl() {
+  const url = document.getElementById('productImageUrl').value;
+  if (!url) return;
+  
+  // Validar que sea una URL de imagen
+  if (!url.match(/\.(jpeg|jpg|png|gif|webp)(\?.*)?$/i)) {
+    return; // No es una imagen válida
+  }
+  
+  selectedImageData = url;
+  showImagePreview(url);
+}
+
+function showImagePreview(imageSrc) {
+  const preview = document.getElementById('imagePreview');
+  const previewImg = document.getElementById('previewImg');
+  
+  previewImg.src = imageSrc;
+  preview.style.display = 'block';
+}
+
+// Cloudinary Upload (requires widget)
+function openCloudinaryUpload() {
+  // Aquí integrarías el widget de Cloudinary
+  // Por ahora, simulamos la funcionalidad
+  alert(`🚧 Próximamente: Integración con Cloudinary
+  
+📋 Para configurar Cloudinary:
+1. Crea cuenta en cloudinary.com
+2. Obtén tu Cloud Name 
+3. Configura upload preset
+4. Agrega el widget JavaScript
+
+💡 Mientras tanto, puedes usar las opciones "📂 Subir Archivo" o "🌐 URL"`);
+}
+
+// Cámara
+function openCamera() {
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    alert('Tu navegador no soporta cámara web');
+    return;
+  }
+  
+  // Crear modal para cámara
+  const cameraModal = document.createElement('div');
+  cameraModal.id = 'cameraModal';
+  cameraModal.style.cssText = `
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.9);
+    z-index: 2000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  `;
+  
+  cameraModal.innerHTML = `
+    <div style="background: #140719; border-radius: 12px; padding: 2rem; text-align: center;">
+      <h3 style="color: #f51b91; margin-bottom: 1rem;">📱 Tomar Foto</h3>
+      <video id="cameraVideo" width="400" height="300" autoplay style="border-radius: 8px; margin-bottom: 1rem;"></video>
+      <br>
+      <button onclick="capturePhoto()" style="background: #16c784; color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 8px; margin-right: 1rem; cursor: pointer;">📸 Capturar</button>
+      <button onclick="closeCameraModal()" style="background: #dc3545; color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 8px; cursor: pointer;">❌ Cancelar</button>
+      <canvas id="photoCanvas" style="display: none;"></canvas>
+    </div>
+  `;
+  
+  document.body.appendChild(cameraModal);
+  
+  // Activar cámara
+  navigator.mediaDevices.getUserMedia({ video: true })
+    .then(function(stream) {
+      document.getElementById('cameraVideo').srcObject = stream;
+      window.cameraStream = stream;
+    })
+    .catch(function(err) {
+      alert('Error al acceder a la cámara: ' + err.message);
+      closeCameraModal();
+    });
+}
+
+function capturePhoto() {
+  const video = document.getElementById('cameraVideo');
+  const canvas = document.getElementById('photoCanvas');
+  const context = canvas.getContext('2d');
+  
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
+  context.drawImage(video, 0, 0);
+  
+  selectedImageData = canvas.toDataURL('image/jpeg', 0.8);
+  showImagePreview(selectedImageData);
+  
+  closeCameraModal();
+}
+
+function closeCameraModal() {
+  if (window.cameraStream) {
+    window.cameraStream.getTracks().forEach(track => track.stop());
+  }
+  const modal = document.getElementById('cameraModal');
+  if (modal) {
+    document.body.removeChild(modal);
+  }
 }
 
 // Función WhatsApp modificada para diferenciar vendor/cliente
