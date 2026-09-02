@@ -1,0 +1,8 @@
+{
+  "buildCommand": "echo 'No build required'",
+  "outputDirectory": "frontend/public",
+  "cleanUrls": true,
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
+}
