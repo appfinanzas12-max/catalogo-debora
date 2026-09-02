@@ -1,121 +1,211 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DEBORA - Panel Vendedor</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>DEBORA · Vendedor</title>
     <style>
-        :root {
-            --bg: #100516;
-            --panel: #180b20;
-            --pink: #f51b91;
-            --text: #eee7f0;
-            --muted: #b8acba;
-            --green: #16c784;
-            --line: #6f2c7b;
-        }
-
-        * { box-sizing: border-box; }
-
         body {
             margin: 0;
-            background: radial-gradient(circle at 50% -10%, #2a0d34 0, #100516 42%, #0b0310 100%);
-            color: var(--text);
-            font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
-            min-height: 100vh;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+            background: #100516;
+            color: #fff;
             display: flex;
             align-items: center;
             justify-content: center;
+            min-height: 100vh;
         }
-
-        .panel {
-            background: var(--panel);
-            border: 1px solid var(--line);
-            border-radius: 20px;
-            padding: 40px;
+        .container {
             text-align: center;
-            max-width: 500px;
-            width: 90%;
+            padding: 40px;
+            border: 1px solid #6f2c7b;
+            border-radius: 20px;
+            background: #140719;
+            box-shadow: 0 22px 65px rgba(0,0,0,0.5);
         }
-
-        h1 {
-            color: var(--pink);
-            margin-bottom: 20px;
-        }
-
+        h1 { color: #f51b91; margin-bottom: 20px; }
+        p { color: #b8acba; margin-bottom: 30px; }
         .btn {
-            border: 1px solid var(--line);
-            background: #1b0b24;
-            color: var(--text);
-            border-radius: 10px;
-            padding: 11px 16px;
-            font-size: 12px;
-            font-weight: 700;
-            cursor: pointer;
-            transition: .2s;
-            text-decoration: none;
             display: inline-block;
-            margin: 10px;
-        }
-
-        .btn:hover {
-            border-color: var(--pink);
-            transform: translateY(-1px);
-        }
-
-        .btn.danger {
-            background: #ff4444;
+            padding: 12px 24px;
+            background: #f51b91;
             color: white;
-            border-color: #ff4444;
+            text-decoration: none;
+            border-radius: 10px;
+            font-weight: 700;
+            transition: 0.2s;
+        }
+        .btn:hover { transform: translateY(-2px); }
+        #loginBtn {
+            background: #16c784;
+            border: none;
+            cursor: pointer;
+            margin-left: 10px;
+        }
+        #userInfo {
+            color: #f51b91;
+            margin-bottom: 20px;
+            font-weight: 700;
         }
     </style>
 </head>
 <body>
-    <div class="panel">
-        <h1>👨‍💼 Panel de Vendedor</h1>
-        <p>Bienvenido al panel de vendedores de DEBORA</p>
-        <p style="color: var(--muted); font-size: 14px;">
-            Panel completo en desarrollo...
-        </p>
-        
-        <div style="margin-top: 30px;">
-            <a href="../index.html" class="btn">← Volver al Inicio</a>
-            <button class="btn danger" onclick="logout()">Cerrar Sesión</button>
+    <div class="container">
+        <h1>Panel de Vendedor</h1>
+        <div id="authSection">
+            <p>Debes iniciar sesión para acceder</p>
+            <button id="loginBtn" class="btn" onclick="showLoginModal()">Iniciar Sesión</button>
         </div>
+        <div id="vendorPanel" style="display: none;">
+            <div id="userInfo"></div>
+            <p>Bienvenido al panel de vendedor</p>
+            <p>Desde aquí puedes revisar tus ventas y gestionar tus pedidos.</p>
+            <button class="btn" onclick="logoutUser()">Cerrar Sesión</button>
+        </div>
+        <br><br>
+        <a href="../" class="btn">← Volver al Catálogo</a>
     </div>
 
     <script type="module">
+        // Firebase imports
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
-        import { getAuth, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
 
         const firebaseConfig = {
             apiKey: "AIzaSyB7kXhJ5zy5FMhmksPzdSleO1A7aWMbtu0",
-            authDomain: "deboracatalogo.firebaseapp.com",
+            authDomain: "deboracatalogo.firebaseapp.com", 
             projectId: "deboracatalogo",
             storageBucket: "deboracatalogo.firebasestorage.app",
-            messagingSenderId: "552563622109",
-            appId: "1:552563622109:web:ce43fbb7ca5f581c8cdb34"
+            messagingSenderId: "548158048006",
+            appId: "1:548158048006:web:4a9c4f5d6e8b7c3f2a1b9e"
         };
 
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
+        let currentUser = null;
 
-        // Verificar autenticación
+        const USERS = {
+            'admin@debora.com': { password: 'Admin@2026', role: 'admin', name: 'Administrador' },
+            'vendedor@debora.com': { password: 'Vendedor@2026', role: 'vendor', name: 'Vendedor Principal' }
+        };
+
         onAuthStateChanged(auth, (user) => {
-            if (!user || user.email !== 'vendedor@debora.com') {
-                window.location.href = '../index.html';
+            if (user && USERS[user.email]) {
+                currentUser = { email: user.email, ...USERS[user.email] };
+                updateUI();
+            } else {
+                currentUser = null;
+                updateUI();
             }
         });
 
-        window.logout = async function() {
-            try {
-                await signOut(auth);
-                window.location.href = '../index.html';
-            } catch (error) {
-                console.error('Error al cerrar sesión:', error);
-                alert('Error al cerrar sesión');
+        async function loginUser(email, password) {
+            if (!USERS[email] || USERS[email].password !== password) {
+                throw new Error('Email o contraseña incorrectos');
             }
-        };
+            
+            try {
+                await signInWithEmailAndPassword(auth, email, password);
+            } catch (error) {
+                if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential') {
+                    throw new Error('Email o contraseña incorrectos');
+                }
+                throw error;
+            }
+        }
+
+        async function logoutUser() {
+            await signOut(auth);
+            currentUser = null;
+            updateUI();
+        }
+
+        function updateUI() {
+            const authSection = document.getElementById('authSection');
+            const vendorPanel = document.getElementById('vendorPanel');
+            const userInfo = document.getElementById('userInfo');
+
+            if (currentUser && (currentUser.role === 'vendor' || currentUser.role === 'admin')) {
+                authSection.style.display = 'none';
+                vendorPanel.style.display = 'block';
+                userInfo.textContent = `Conectado como: ${currentUser.name}`;
+            } else {
+                authSection.style.display = 'block';
+                vendorPanel.style.display = 'none';
+            }
+        }
+
+        function showLoginModal() {
+            const modal = document.createElement('div');
+            modal.style.cssText = `
+                position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+                background: rgba(0,0,0,0.8); display: flex; align-items: center; 
+                justify-content: center; z-index: 1000; backdrop-filter: blur(8px);
+            `;
+            
+            modal.innerHTML = `
+                <div style="background: #140719; border: 1px solid #6f2c7b; border-radius: 20px; 
+                             padding: 30px; width: 400px; max-width: 90%; box-shadow: 0 22px 65px rgba(0,0,0,0.5);">
+                  <h2 style="margin: 0 0 20px; color: #fff; text-align: center;">Acceso Vendedor</h2>
+                  <form id="loginForm">
+                    <div style="margin-bottom: 15px;">
+                      <input type="email" id="email" placeholder="Email" required
+                             style="width: 100%; padding: 12px; border: 1px solid #6f2c7b; 
+                                    border-radius: 10px; background: #16091e; color: #fff; 
+                                    outline: none; font-size: 14px;">
+                    </div>
+                    <div style="margin-bottom: 20px;">
+                      <input type="password" id="password" placeholder="Contraseña" required
+                             style="width: 100%; padding: 12px; border: 1px solid #6f2c7b; 
+                                    border-radius: 10px; background: #16091e; color: #fff; 
+                                    outline: none; font-size: 14px;">
+                    </div>
+                    <div id="loginError" style="color: #ff4444; margin-bottom: 15px; font-size: 12px; display: none;"></div>
+                    <button type="submit" style="width: 100%; padding: 12px; background: #f51b91; 
+                                                 color: white; border: none; border-radius: 10px; 
+                                                 font-weight: 700; cursor: pointer; font-size: 14px;">
+                      Ingresar
+                    </button>
+                    <button type="button" onclick="this.closest('div').parentElement.remove()" 
+                            style="width: 100%; padding: 12px; background: transparent; 
+                                   color: #6f2c7b; border: 1px solid #6f2c7b; border-radius: 10px; 
+                                   font-weight: 700; cursor: pointer; margin-top: 10px; font-size: 14px;">
+                      Cancelar
+                    </button>
+                  </form>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+            
+            const form = document.getElementById('loginForm');
+            form.onsubmit = async (e) => {
+                e.preventDefault();
+                const email = document.getElementById('email').value;
+                const password = document.getElementById('password').value;
+                const errorDiv = document.getElementById('loginError');
+                
+                try {
+                    await loginUser(email, password);
+                    modal.remove();
+                } catch (error) {
+                    errorDiv.textContent = error.message;
+                    errorDiv.style.display = 'block';
+                }
+            };
+            
+            modal.onclick = (e) => {
+                if (e.target === modal) modal.remove();
+            };
+        }
+
+        // Exponer funciones globalmente
+        window.loginUser = loginUser;
+        window.logoutUser = logoutUser;
+        window.showLoginModal = showLoginModal;
+
+        // Inicializar
+        updateUI();
     </script>
 </body>
 </html>
