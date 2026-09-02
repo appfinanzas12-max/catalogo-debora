@@ -29,6 +29,26 @@
 <div id="modal" class="modal" aria-hidden="true" onclick="closeModal(event)"><div class="modal-card" onclick="event.stopPropagation()"><button class="close" onclick="closeModal()">×</button><div id="modalContent"></div></div></div>
 <footer><span>DEBORA · Catálogo interactivo</span></footer>
 
+<!-- Panel de Administración -->
+<div id="adminPanel" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.9);z-index:1500;">
+  <div style="background:#140719;border:1px solid #6f2c7b;border-radius:20px;width:95%;max-width:1200px;margin:2% auto;padding:2rem;position:relative;max-height:90vh;overflow-y:auto;">
+    <span onclick="closeAdminPanel()" style="position:absolute;top:10px;right:15px;font-size:2rem;cursor:pointer;color:#eee7f0;">&times;</span>
+    <h2 style="color:#f51b91;margin-bottom:2rem;text-align:center;">🔧 Panel de Administración</h2>
+    
+    <!-- Pestañas -->
+    <div style="display:flex;gap:1rem;margin-bottom:2rem;border-bottom:1px solid #6f2c7b;">
+      <button onclick="showAdminTab('catalog')" id="tabCatalog" class="admin-tab active" style="background:#f51b91;color:white;border:none;padding:0.75rem 1.5rem;border-radius:8px 8px 0 0;cursor:pointer;">📋 Ver Catálogo</button>
+      <button onclick="showAdminTab('add')" id="tabAdd" class="admin-tab" style="background:#21102b;color:#eee7f0;border:none;padding:0.75rem 1.5rem;border-radius:8px 8px 0 0;cursor:pointer;">➕ Agregar Producto</button>
+      <button onclick="showAdminTab('categories')" id="tabCategories" class="admin-tab" style="background:#21102b;color:#eee7f0;border:none;padding:0.75rem 1.5rem;border-radius:8px 8px 0 0;cursor:pointer;">🏷️ Categorías</button>
+    </div>
+    
+    <!-- Contenido del Panel -->
+    <div id="adminContent">
+      <!-- Se carga dinámicamente -->
+    </div>
+  </div>
+</div>
+
 <!-- Modal Login -->
 <div id="loginModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.8);z-index:1000;">
   <div style="background:#140719;border:1px solid #6f2c7b;border-radius:20px;width:90%;max-width:400px;margin:10% auto;padding:2rem;position:relative;">
@@ -73,6 +93,111 @@ const soon=['Consoladores','Aceites, Lubricantes y Esencias','Juegos Eróticos']
 // Estado del usuario
 let currentUser = null;
 
+// Base de datos simulada de productos (en producción usarías Firebase/etc)
+let adminProducts = [...products]; // Copia de los productos originales
+
+// Contador para generar códigos únicos
+let productCounter = products.length + 1;
+
+// Categorías disponibles
+const categories = [
+  { id: 'vibradores', name: 'Vibradores', prefix: 'DE-V' },
+  { id: 'lenceria', name: 'Lencería', prefix: 'DE-L' },
+  { id: 'aceites', name: 'Aceites y Lubricantes', prefix: 'DE-A' },
+  { id: 'juguetes', name: 'Juguetes', prefix: 'DE-J' },
+  { id: 'accesorios', name: 'Accesorios', prefix: 'DE-AC' }
+];
+
+// Panel de Administración
+function openAdminPanel() {
+  if (!currentUser || currentUser.role !== 'admin') {
+    alert('Solo los administradores pueden acceder al panel de administración');
+    return;
+  }
+  document.getElementById('adminPanel').style.display = 'block';
+  showAdminTab('catalog');
+}
+
+function closeAdminPanel() {
+  document.getElementById('adminPanel').style.display = 'none';
+}
+
+function showAdminTab(tab) {
+  // Actualizar pestañas
+  document.querySelectorAll('.admin-tab').forEach(t => {
+    t.style.background = '#21102b';
+    t.style.color = '#eee7f0';
+  });
+  document.getElementById('tab' + tab.charAt(0).toUpperCase() + tab.slice(1)).style.background = '#f51b91';
+  document.getElementById('tab' + tab.charAt(0).toUpperCase() + tab.slice(1)).style.color = 'white';
+  
+  // Mostrar contenido
+  const content = document.getElementById('adminContent');
+  
+  if (tab === 'catalog') {
+    showAdminCatalog(content);
+  } else if (tab === 'add') {
+    showAddProductForm(content);
+  } else if (tab === 'categories') {
+    showCategoriesManager(content);
+  }
+}
+
+function showAdminCatalog(content) {
+  content.innerHTML = `
+    <h3 style="color:#f51b91;margin-bottom:1rem;">📋 Gestión de Catálogo</h3>
+    <div style="margin-bottom:1rem;">
+      <input type="text" id="searchProducts" placeholder="Buscar productos..." style="width:100%;padding:0.75rem;border:1px solid #6f2c7b;background:#0e0612;color:#eee7f0;border-radius:8px;" onkeyup="filterAdminProducts()">
+    </div>
+    <div id="adminProductsList" style="max-height:500px;overflow-y:auto;">
+      ${renderAdminProductsList()}
+    </div>
+  `;
+}
+
+function renderAdminProductsList() {
+  return adminProducts.map(product => `
+    <div class="admin-product-item" style="background:#21102b;border:1px solid #6f2c7b;border-radius:12px;padding:1rem;margin-bottom:1rem;display:grid;grid-template-columns:1fr auto;gap:1rem;align-items:center;">
+      <div>
+        <h4 style="color:#f51b91;margin:0 0 0.5rem 0;">${product.name}</h4>
+        <p style="color:#b8acba;margin:0 0 0.5rem 0;font-size:0.9rem;">Código: ${product.code} | Categoría: ${product.cat} | Precio: ${product.price}</p>
+        <div style="color:#eee7f0;font-size:0.8rem;">
+          ${product.details ? product.details.slice(0, 2).map(d => `<span style="margin-right:1rem;"><strong>${d[0]}:</strong> ${d[1]}</span>`).join('') : ''}
+        </div>
+      </div>
+      <div style="display:flex;gap:0.5rem;">
+        <button onclick="editProduct('${product.code}')" style="background:#16c784;color:white;border:none;padding:0.5rem 1rem;border-radius:6px;cursor:pointer;">✏️ Editar</button>
+        <button onclick="deleteProduct('${product.code}')" style="background:#dc3545;color:white;border:none;padding:0.5rem 1rem;border-radius:6px;cursor:pointer;">🗑️ Eliminar</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function filterAdminProducts() {
+  const search = document.getElementById('searchProducts').value.toLowerCase();
+  const filtered = adminProducts.filter(p => 
+    p.name.toLowerCase().includes(search) || 
+    p.code.toLowerCase().includes(search) ||
+    p.cat.toLowerCase().includes(search)
+  );
+  
+  document.getElementById('adminProductsList').innerHTML = filtered.map(product => `
+    <div class="admin-product-item" style="background:#21102b;border:1px solid #6f2c7b;border-radius:12px;padding:1rem;margin-bottom:1rem;display:grid;grid-template-columns:1fr auto;gap:1rem;align-items:center;">
+      <div>
+        <h4 style="color:#f51b91;margin:0 0 0.5rem 0;">${product.name}</h4>
+        <p style="color:#b8acba;margin:0 0 0.5rem 0;font-size:0.9rem;">Código: ${product.code} | Categoría: ${product.cat} | Precio: ${product.price}</p>
+        <div style="color:#eee7f0;font-size:0.8rem;">
+          ${product.details ? product.details.slice(0, 2).map(d => `<span style="margin-right:1rem;"><strong>${d[0]}:</strong> ${d[1]}</span>`).join('') : ''}
+        </div>
+      </div>
+      <div style="display:flex;gap:0.5rem;">
+        <button onclick="editProduct('${product.code}')" style="background:#16c784;color:white;border:none;padding:0.5rem 1rem;border-radius:6px;cursor:pointer;">✏️ Editar</button>
+        <button onclick="deleteProduct('${product.code}')" style="background:#dc3545;color:white;border:none;padding:0.5rem 1rem;border-radius:6px;cursor:pointer;">🗑️ Eliminar</button>
+      </div>
+    </div>
+  `).join('');
+}
+
 // Sistema de Login
 function openLoginModal() {
   document.getElementById('loginModal').style.display = 'block';
@@ -108,9 +233,152 @@ function loginSuccess() {
 function updateLoginButton() {
   const loginBtn = document.querySelector('button[onclick="openLoginModal()"]');
   if (currentUser) {
-    loginBtn.innerHTML = '👤 ' + currentUser.name + ' | <span onclick="logout()" style="color:#f51b91;">Cerrar Sesión</span>';
+    if (currentUser.role === 'admin') {
+      loginBtn.innerHTML = '👤 ' + currentUser.name + ' | <span onclick="openAdminPanel()" style="color:#16c784;cursor:pointer;">🔧 Admin Panel</span> | <span onclick="logout()" style="color:#f51b91;cursor:pointer;">Cerrar Sesión</span>';
+    } else {
+      loginBtn.innerHTML = '👤 ' + currentUser.name + ' | <span onclick="logout()" style="color:#f51b91;cursor:pointer;">Cerrar Sesión</span>';
+    }
     loginBtn.onclick = null;
   }
+}
+
+function showAddProductForm(content) {
+  content.innerHTML = `
+    <h3 style="color:#f51b91;margin-bottom:1rem;">➕ Agregar Nuevo Producto</h3>
+    <form id="addProductForm" style="display:grid;gap:1rem;">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+        <div>
+          <label style="display:block;margin-bottom:0.5rem;color:#eee7f0;font-weight:bold;">Nombre del Producto *</label>
+          <input type="text" id="productName" required style="width:100%;padding:0.75rem;border:1px solid #6f2c7b;background:#0e0612;color:#eee7f0;border-radius:8px;">
+        </div>
+        <div>
+          <label style="display:block;margin-bottom:0.5rem;color:#eee7f0;font-weight:bold;">Categoría *</label>
+          <select id="productCategory" required style="width:100%;padding:0.75rem;border:1px solid #6f2c7b;background:#0e0612;color:#eee7f0;border-radius:8px;">
+            <option value="">Seleccionar categoría...</option>
+            ${categories.map(cat => `<option value="${cat.id}">${cat.name}</option>`).join('')}
+          </select>
+        </div>
+      </div>
+      
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+        <div>
+          <label style="display:block;margin-bottom:0.5rem;color:#eee7f0;font-weight:bold;">Precio *</label>
+          <input type="text" id="productPrice" required placeholder="$50.000" style="width:100%;padding:0.75rem;border:1px solid #6f2c7b;background:#0e0612;color:#eee7f0;border-radius:8px;">
+        </div>
+        <div>
+          <label style="display:block;margin-bottom:0.5rem;color:#eee7f0;font-weight:bold;">Tag/Etiqueta</label>
+          <input type="text" id="productTag" placeholder="ALTA GAMA & APP SYNC" style="width:100%;padding:0.75rem;border:1px solid #6f2c7b;background:#0e0612;color:#eee7f0;border-radius:8px;">
+        </div>
+      </div>
+      
+      <div>
+        <label style="display:block;margin-bottom:0.5rem;color:#eee7f0;font-weight:bold;">Descripción</label>
+        <textarea id="productDesc" rows="3" placeholder="Descripción detallada del producto..." style="width:100%;padding:0.75rem;border:1px solid #6f2c7b;background:#0e0612;color:#eee7f0;border-radius:8px;resize:vertical;"></textarea>
+      </div>
+      
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;">
+        <div>
+          <label style="display:block;margin-bottom:0.5rem;color:#eee7f0;font-weight:bold;">Tallas</label>
+          <input type="text" id="productSizes" placeholder="S, M, L, XL" style="width:100%;padding:0.75rem;border:1px solid #6f2c7b;background:#0e0612;color:#eee7f0;border-radius:8px;">
+        </div>
+        <div>
+          <label style="display:block;margin-bottom:0.5rem;color:#eee7f0;font-weight:bold;">Colores</label>
+          <input type="text" id="productColors" placeholder="Rojo, Negro, Rosa" style="width:100%;padding:0.75rem;border:1px solid #6f2c7b;background:#0e0612;color:#eee7f0;border-radius:8px;">
+        </div>
+        <div>
+          <label style="display:block;margin-bottom:0.5rem;color:#eee7f0;font-weight:bold;">Disponibilidad</label>
+          <select id="productAvailability" style="width:100%;padding:0.75rem;border:1px solid #6f2c7b;background:#0e0612;color:#eee7f0;border-radius:8px;">
+            <option value="disponible">✅ Disponible</option>
+            <option value="limitado">⚠️ Stock Limitado</option>
+            <option value="agotado">❌ Agotado</option>
+          </select>
+        </div>
+      </div>
+      
+      <div>
+        <label style="display:block;margin-bottom:0.5rem;color:#eee7f0;font-weight:bold;">Material</label>
+        <input type="text" id="productMaterial" placeholder="Silicona médica, Encaje, etc." style="width:100%;padding:0.75rem;border:1px solid #6f2c7b;background:#0e0612;color:#eee7f0;border-radius:8px;">
+      </div>
+      
+      <div style="background:#21102b;padding:1rem;border-radius:8px;border:1px solid #6f2c7b;">
+        <h4 style="color:#f51b91;margin:0 0 0.5rem 0;">📱 Integración Automática</h4>
+        <p style="color:#b8acba;margin:0;font-size:0.9rem;">✅ Se generará automáticamente: código único, botón WhatsApp y se agregará al catálogo</p>
+      </div>
+      
+      <button type="submit" style="background:#16c784;color:white;border:none;padding:1rem 2rem;border-radius:8px;cursor:pointer;font-weight:bold;font-size:1rem;">🚀 Agregar Producto</button>
+    </form>
+  `;
+  
+  document.getElementById('addProductForm').addEventListener('submit', handleAddProduct);
+}
+
+function handleAddProduct(e) {
+  e.preventDefault();
+  
+  const name = document.getElementById('productName').value;
+  const categoryId = document.getElementById('productCategory').value;
+  const price = document.getElementById('productPrice').value;
+  const tag = document.getElementById('productTag').value || 'NUEVO PRODUCTO';
+  const desc = document.getElementById('productDesc').value || 'Producto de calidad premium';
+  const sizes = document.getElementById('productSizes').value;
+  const colors = document.getElementById('productColors').value;
+  const availability = document.getElementById('productAvailability').value;
+  const material = document.getElementById('productMaterial').value;
+  
+  if (!name || !categoryId || !price) {
+    alert('Por favor completa los campos obligatorios (*)');
+    return;
+  }
+  
+  // Generar código automático
+  const category = categories.find(c => c.id === categoryId);
+  const code = generateProductCode(category.prefix);
+  
+  // Crear detalles del producto
+  const details = [];
+  if (material) details.push(['Material', material]);
+  if (sizes) details.push(['Tallas', sizes]);
+  if (colors) details.push(['Colores', colors]);
+  details.push(['Disponibilidad', getAvailabilityText(availability)]);
+  
+  // Crear nuevo producto
+  const newProduct = {
+    code: code,
+    cat: categoryId,
+    tag: tag,
+    name: name,
+    price: price,
+    desc: desc,
+    details: details,
+    image: `data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="250" viewBox="0 0 300 250"><rect width="300" height="250" fill="%23f51b91"/><text x="150" y="130" text-anchor="middle" fill="white" font-size="16">${name}</text></svg>`
+  };
+  
+  // Agregar a la lista
+  adminProducts.push(newProduct);
+  products.push(newProduct); // También actualizar productos originales
+  
+  alert('¡Producto agregado exitosamente! 🎉');
+  
+  // Limpiar formulario
+  document.getElementById('addProductForm').reset();
+  
+  // Refrescar catálogo si está visible
+  if (document.getElementById('tabCatalog').style.background === 'rgb(245, 27, 145)') {
+    showAdminTab('catalog');
+  }
+}
+
+function generateProductCode(prefix) {
+  let counter = 1;
+  let code;
+  
+  // Encontrar el siguiente número disponible
+  do {
+    code = `${prefix}${counter.toString().padStart(3, '0')}`;
+    counter++;
+  } while (adminProducts.some(p => p.code === code));
+  
+  return code;
 }
 
 function logout() {
@@ -118,6 +386,163 @@ function logout() {
   const loginBtn = document.querySelector('.ghost');
   loginBtn.innerHTML = '👤 Login';
   loginBtn.onclick = openLoginModal;
+}
+
+function editProduct(code) {
+  const product = adminProducts.find(p => p.code === code);
+  if (!product) return;
+  
+  const content = document.getElementById('adminContent');
+  content.innerHTML = `
+    <h3 style="color:#f51b91;margin-bottom:1rem;">✏️ Editar Producto: ${product.code}</h3>
+    <form id="editProductForm" style="display:grid;gap:1rem;">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+        <div>
+          <label style="display:block;margin-bottom:0.5rem;color:#eee7f0;font-weight:bold;">Nombre del Producto *</label>
+          <input type="text" id="editProductName" value="${product.name}" required style="width:100%;padding:0.75rem;border:1px solid #6f2c7b;background:#0e0612;color:#eee7f0;border-radius:8px;">
+        </div>
+        <div>
+          <label style="display:block;margin-bottom:0.5rem;color:#eee7f0;font-weight:bold;">Categoría *</label>
+          <select id="editProductCategory" required style="width:100%;padding:0.75rem;border:1px solid #6f2c7b;background:#0e0612;color:#eee7f0;border-radius:8px;">
+            ${categories.map(cat => `<option value="${cat.id}" ${product.cat === cat.id ? 'selected' : ''}>${cat.name}</option>`).join('')}
+          </select>
+        </div>
+      </div>
+      
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+        <div>
+          <label style="display:block;margin-bottom:0.5rem;color:#eee7f0;font-weight:bold;">Precio *</label>
+          <input type="text" id="editProductPrice" value="${product.price}" required style="width:100%;padding:0.75rem;border:1px solid #6f2c7b;background:#0e0612;color:#eee7f0;border-radius:8px;">
+        </div>
+        <div>
+          <label style="display:block;margin-bottom:0.5rem;color:#eee7f0;font-weight:bold;">Tag/Etiqueta</label>
+          <input type="text" id="editProductTag" value="${product.tag || ''}" style="width:100%;padding:0.75rem;border:1px solid #6f2c7b;background:#0e0612;color:#eee7f0;border-radius:8px;">
+        </div>
+      </div>
+      
+      <div>
+        <label style="display:block;margin-bottom:0.5rem;color:#eee7f0;font-weight:bold;">Descripción</label>
+        <textarea id="editProductDesc" rows="3" style="width:100%;padding:0.75rem;border:1px solid #6f2c7b;background:#0e0612;color:#eee7f0;border-radius:8px;resize:vertical;">${product.desc || ''}</textarea>
+      </div>
+      
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;">
+        <div>
+          <label style="display:block;margin-bottom:0.5rem;color:#eee7f0;font-weight:bold;">Tallas</label>
+          <input type="text" id="editProductSizes" value="${getDetailValue(product, 'Tallas')}" style="width:100%;padding:0.75rem;border:1px solid #6f2c7b;background:#0e0612;color:#eee7f0;border-radius:8px;">
+        </div>
+        <div>
+          <label style="display:block;margin-bottom:0.5rem;color:#eee7f0;font-weight:bold;">Colores</label>
+          <input type="text" id="editProductColors" value="${getDetailValue(product, 'Colores')}" style="width:100%;padding:0.75rem;border:1px solid #6f2c7b;background:#0e0612;color:#eee7f0;border-radius:8px;">
+        </div>
+        <div>
+          <label style="display:block;margin-bottom:0.5rem;color:#eee7f0;font-weight:bold;">Material</label>
+          <input type="text" id="editProductMaterial" value="${getDetailValue(product, 'Material')}" style="width:100%;padding:0.75rem;border:1px solid #6f2c7b;background:#0e0612;color:#eee7f0;border-radius:8px;">
+        </div>
+      </div>
+      
+      <div style="display:flex;gap:1rem;">
+        <button type="submit" style="background:#16c784;color:white;border:none;padding:1rem 2rem;border-radius:8px;cursor:pointer;font-weight:bold;flex:1;">💾 Guardar Cambios</button>
+        <button type="button" onclick="showAdminTab('catalog')" style="background:#6c757d;color:white;border:none;padding:1rem 2rem;border-radius:8px;cursor:pointer;font-weight:bold;">❌ Cancelar</button>
+      </div>
+    </form>
+  `;
+  
+  document.getElementById('editProductForm').addEventListener('submit', (e) => handleEditProduct(e, code));
+}
+
+function handleEditProduct(e, code) {
+  e.preventDefault();
+  
+  const productIndex = adminProducts.findIndex(p => p.code === code);
+  const originalIndex = products.findIndex(p => p.code === code);
+  
+  if (productIndex === -1) return;
+  
+  const name = document.getElementById('editProductName').value;
+  const categoryId = document.getElementById('editProductCategory').value;
+  const price = document.getElementById('editProductPrice').value;
+  const tag = document.getElementById('editProductTag').value || 'PRODUCTO ACTUALIZADO';
+  const desc = document.getElementById('editProductDesc').value || 'Producto de calidad premium';
+  const sizes = document.getElementById('editProductSizes').value;
+  const colors = document.getElementById('editProductColors').value;
+  const material = document.getElementById('editProductMaterial').value;
+  
+  // Actualizar detalles
+  const details = [];
+  if (material) details.push(['Material', material]);
+  if (sizes) details.push(['Tallas', sizes]);
+  if (colors) details.push(['Colores', colors]);
+  details.push(['Disponibilidad', '✅ Disponible']);
+  
+  // Actualizar producto
+  const updatedProduct = {
+    ...adminProducts[productIndex],
+    name: name,
+    cat: categoryId,
+    tag: tag,
+    price: price,
+    desc: desc,
+    details: details
+  };
+  
+  adminProducts[productIndex] = updatedProduct;
+  if (originalIndex !== -1) {
+    products[originalIndex] = updatedProduct;
+  }
+  
+  alert('¡Producto actualizado exitosamente! 🎉');
+  showAdminTab('catalog');
+}
+
+function deleteProduct(code) {
+  if (!confirm('¿Estás seguro de que quieres eliminar este producto? Esta acción no se puede deshacer.')) {
+    return;
+  }
+  
+  const productIndex = adminProducts.findIndex(p => p.code === code);
+  const originalIndex = products.findIndex(p => p.code === code);
+  
+  if (productIndex !== -1) {
+    adminProducts.splice(productIndex, 1);
+  }
+  if (originalIndex !== -1) {
+    products.splice(originalIndex, 1);
+  }
+  
+  alert('Producto eliminado exitosamente');
+  showAdminTab('catalog');
+}
+
+function getDetailValue(product, key) {
+  if (!product.details) return '';
+  const detail = product.details.find(d => d[0] === key);
+  return detail ? detail[1] : '';
+}
+
+function showCategoriesManager(content) {
+  content.innerHTML = `
+    <h3 style="color:#f51b91;margin-bottom:1rem;">🏷️ Gestión de Categorías</h3>
+    <div style="background:#21102b;padding:1.5rem;border-radius:12px;border:1px solid #6f2c7b;">
+      <h4 style="color:#f51b91;margin:0 0 1rem 0;">Categorías Disponibles</h4>
+      ${categories.map(cat => `
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:0.75rem;background:#140719;border-radius:8px;margin-bottom:0.5rem;">
+          <div>
+            <strong style="color:#eee7f0;">${cat.name}</strong>
+            <span style="color:#b8acba;margin-left:1rem;">Prefijo: ${cat.prefix}</span>
+          </div>
+          <span style="background:#f51b91;color:white;padding:0.25rem 0.75rem;border-radius:15px;font-size:0.8rem;">
+            ${adminProducts.filter(p => p.cat === cat.id).length} productos
+          </span>
+        </div>
+      `).join('')}
+      
+      <div style="margin-top:1.5rem;padding:1rem;background:#140719;border-radius:8px;border:1px dashed #6f2c7b;">
+        <p style="color:#b8acba;margin:0;text-align:center;">
+          💡 <strong>Próximamente:</strong> Podrás agregar y editar categorías personalizadas
+        </p>
+      </div>
+    </div>
+  `;
 }
 
 // Función WhatsApp modificada para diferenciar vendor/cliente
